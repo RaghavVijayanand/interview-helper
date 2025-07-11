@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Interview Helper</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+    
+    .controls {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+      gap: 10px;
+    }
+    
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .start-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    
+    .stop-btn {
+      background-color: #f44336;
+      color: white;
+    }
+    
+    .continuous-mode {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+      margin-left: 10px;
+    }
+    
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    
+    .transcription, .response {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    
+    .transcription {
+      background-color: #e1f5fe;
+      border-left: 5px solid #03a9f4;
+    }
+    
+    .response {
+      background-color: #f1f8e9;
+      border-left: 5px solid #8bc34a;
+    }
+    
+    h2 {
+      margin-top: 0;
+      color: #555;
+      font-size: 18px;
+    }
+    
+    .status {
+      text-align: center;
+      margin-top: 10px;
+      font-style: italic;
+      color: #757575;
+    }
+    
+    .error {
+      color: #f44336;
+      text-align: center;
+      margin-top: 10px;
+    }
+    
+    .notification {
+      background-color: #fff3cd;
+      border-left: 5px solid #ffc107;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    
+    .notification h3 {
+      margin-top: 0;
+      color: #856404;
+      font-size: 16px;
+    }
+    
+    .notification p {
+      margin-bottom: 5px;
+      color: #856404;
+    }
+    
+    .notification a {
+      color: #856404;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Interview Helper</h1>
+    
+    <div class="notification" style="background-color: #d1ecf1; border-left-color: #0c5460;">
+      <h3 style="color: #0c5460;">Demo Mode Active</h3>
+      <p style="color: #0c5460;">This application is running in demo mode:</p>
+      <ul style="color: #0c5460; margin-bottom: 10px;">
+        <li>Audio recording is simulated - no actual microphone access needed</li>
+        <li>AI responses are pre-written examples (no API key required)</li>
+        <li>See debug information at the bottom for details on what's happening</li>
+      </ul>
+      <p style="color: #0c5460;">To use real features, configure your API key in the .env file and set up audio capture.</p>
+    </div>
+    
+    <div class="notification">
+      <h3>System Audio Capture</h3>
+      <p>To capture both your voice and the interviewer's voice, additional setup is required:</p>
+      <p>1. For Windows: Enable "Stereo Mix" in Sound settings or use virtual audio routing software.</p>
+      <p>2. Without setup, only your microphone will be recorded.</p>
+      <p>Check the README for detailed instructions.</p>
+    </div>
+    
+    <div class="continuous-mode">
+      <span>Continuous Mode:</span>
+      <label class="switch">
+        <input type="checkbox" id="continuous-mode">
+        <span class="slider"></span>
+      </label>
+    </div>
+    
+    <div class="controls">
+      <button id="start-recording" class="start-btn">Start Recording</button>
+      <button id="stop-recording" class="stop-btn" disabled>Stop Recording</button>
+    </div>
+    
+    <p id="status" class="status">Ready to assist with your interview.</p>
+    <p id="error" class="error"></p>
+    
+    <div class="transcription">
+      <h2>Interview Transcription:</h2>
+      <p id="transcription-text">No audio captured yet.</p>
+    </div>
+    
+    <div class="response">
+      <h2>Suggested Response:</h2>
+      <p id="response-text">Waiting for interview question...</p>
+    </div>
+    
+    <div class="debug-info" style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-left: 5px solid #6c757d; font-family: monospace; font-size: 12px;">
+      <h3 style="margin-top: 0; color: #495057;">Debug Information:</h3>
+      <div id="debug-log" style="max-height: 200px; overflow-y: auto; white-space: pre-wrap;">Application loaded. Waiting for actions.</div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const startBtn = document.getElementById('start-recording');
+      const stopBtn = document.getElementById('stop-recording');
+      const continuousModeToggle = document.getElementById('continuous-mode');
+      const status = document.getElementById('status');
+      const error = document.getElementById('error');
+      const transcriptionText = document.getElementById('transcription-text');
+      const responseText = document.getElementById('response-text');
+      const debugLog = document.getElementById('debug-log');
+      
+      let isRecording = false;
+      
+      // Add debug logging function
+      function addDebugLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        debugLog.innerHTML += `\n[${timestamp}] ${message}`;
+        debugLog.scrollTop = debugLog.scrollHeight;
+      }
+      
+      // Handle continuous mode updates
+      window.interviewHelper.onContinuousUpdate((data) => {
+        transcriptionText.textContent = data.transcription;
+        responseText.textContent = data.response;
+        addDebugLog(`Continuous update received: ${data.transcription.substring(0, 50)}...`);
+      });
+      
+      // Toggle continuous mode
+      continuousModeToggle.addEventListener('change', async () => {
+        try {
+          addDebugLog(`Toggling continuous mode: ${continuousModeToggle.checked}`);
+          const result = await window.interviewHelper.toggleContinuousMode(continuousModeToggle.checked);
+          status.textContent = result.message;
+          addDebugLog(`Continuous mode result: ${result.message}`);
+          
+          if (continuousModeToggle.checked) {
+            startBtn.disabled = true;
+            stopBtn.disabled = true;
+          } else {
+            startBtn.disabled = isRecording;
+            stopBtn.disabled = !isRecording;
+          }
+        } catch (err) {
+          error.textContent = `Error: ${err.message}`;
+          addDebugLog(`Error toggling continuous mode: ${err.message}`);
+        }
+      });
+      
+      // Start recording
+      startBtn.addEventListener('click', async () => {
+        try {
+          error.textContent = '';
+          status.textContent = 'Starting recording...';
+          addDebugLog('Starting recording...');
+          
+          const result = await window.interviewHelper.startRecording();
+          
+          if (result.success) {
+            isRecording = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            status.textContent = 'Recording... Listening to interview conversation.';
+            addDebugLog('Recording started successfully');
+          } else {
+            error.textContent = `Error: ${result.error}`;
+            addDebugLog(`Recording error: ${result.error}`);
+          }
+        } catch (err) {
+          error.textContent = `Error: ${err.message}`;
+          addDebugLog(`Error starting recording: ${err.message}`);
+        }
+      });
+      
+      // Stop recording
+      stopBtn.addEventListener('click', async () => {
+        try {
+          status.textContent = 'Processing audio...';
+          addDebugLog('Stopping recording...');
+          
+          const recordingResult = await window.interviewHelper.stopRecording();
+          
+          if (recordingResult.success) {
+            isRecording = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            transcriptionText.textContent = recordingResult.audioData.text || 'Could not transcribe audio.';
+            addDebugLog(`Transcription: ${recordingResult.audioData.text.substring(0, 50)}...`);
+            
+            // Process with Gemini API
+            addDebugLog('Processing with Gemini API...');
+            const processResult = await window.interviewHelper.processAudio(recordingResult.audioData.text);
+            
+            if (processResult.success) {
+              responseText.textContent = processResult.response;
+              status.textContent = 'Processed successfully.';
+              addDebugLog(`Gemini response: ${processResult.response.substring(0, 50)}...`);
+            } else {
+              error.textContent = `Processing error: ${processResult.error}`;
+              status.textContent = 'Ready to assist with your interview.';
+              addDebugLog(`Gemini API error: ${processResult.error}`);
+            }
+          } else {
+            error.textContent = `Recording error: ${recordingResult.error}`;
+            status.textContent = 'Ready to assist with your interview.';
+            addDebugLog(`Stop recording error: ${recordingResult.error}`);
+          }
+        } catch (err) {
+          error.textContent = `Error: ${err.message}`;
+          status.textContent = 'Ready to assist with your interview.';
+          addDebugLog(`Error in stop recording process: ${err.message}`);
+        }
+      });
+      
+      // Log initial system info
+      addDebugLog('Application initialized');
+      addDebugLog(`Platform: ${navigator.platform}`);
+      addDebugLog('Ready to assist with your interview');
+    });
+  </script>
+</body>
+</html> 
